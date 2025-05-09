@@ -1,0 +1,39 @@
+name: Check Commit Message Format
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  check-commit-message:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Get commit messages
+        id: get_commits
+        run: |
+          echo "Fetching commit messages from PR..."
+          COMMITS=$(git log origin/main..HEAD --pretty=format:%s)
+          echo "$COMMITS" > commit_messages.txt
+
+      - name: Check commit message format
+        run: |
+          echo "Checking commit messages..."
+          PATTERN="^(STORY|BUG|TASK)/MAC-[0-9]+: .+"
+          INVALID=0
+
+          while IFS= read -r COMMIT_MSG; do
+            if ! echo "$COMMIT_MSG" | grep -Eq "$PATTERN"; then
+              echo "❌ Invalid commit message: '$COMMIT_MSG'"
+              echo "✅ Expected format: STORY|BUG|TASK/MAC-<number>: <message>"
+              echo "Example: TASK/MAC-1234: Add login feature"
+              INVALID=1
+            fi
+          done < commit_messages.txt
+
+          if [ "$INVALID" -eq 1 ]; then
+            exit 1
+          fi
