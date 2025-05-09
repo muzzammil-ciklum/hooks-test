@@ -9,8 +9,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout code with full history
         uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Fetch base branch
+        run: git fetch origin main
 
       - name: Get commit messages
         id: get_commits
