@@ -21,8 +21,7 @@ jobs:
         id: get_commits
         run: |
           echo "Fetching commit messages from PR..."
-          COMMITS=$(git log origin/main..HEAD --pretty=format:%s)
-          echo "$COMMITS" > commit_messages.txt
+          git log origin/main..HEAD --pretty=format:%s > commit_messages.txt
 
       - name: Check commit message format
         run: |
@@ -31,6 +30,12 @@ jobs:
           INVALID=0
 
           while IFS= read -r COMMIT_MSG; do
+            # Skip merge commits like "Merge abc123 into def456"
+            if echo "$COMMIT_MSG" | grep -qE "^Merge [a-f0-9]{7,} into [a-f0-9]{7,}$"; then
+              echo "ℹ️ Skipping merge commit: '$COMMIT_MSG'"
+              continue
+            fi
+
             if ! echo "$COMMIT_MSG" | grep -Eq "$PATTERN"; then
               echo "❌ Invalid commit message: '$COMMIT_MSG'"
               echo "✅ Expected format: STORY|BUG|TASK/MAC-<number>: <message>"
